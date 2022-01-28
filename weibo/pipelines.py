@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-
 # Define your item pipelines here
-#
+
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
-# See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
+# # See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 
 import copy
 import csv
@@ -16,7 +15,6 @@ from scrapy.pipelines.images import ImagesPipeline
 from scrapy.utils.project import get_project_settings
 
 settings = get_project_settings()
-
 
 class CsvPipeline(object):
     def process_item(self, item, spider):
@@ -94,8 +92,8 @@ class MongoPipeline(object):
         try:
             from pymongo import MongoClient
             self.client = MongoClient(settings.get('MONGO_URI'))
-            self.db = self.client['weibo']
-            self.collection = self.db['weibo']
+            self.db = self.client[settings.get('DB_NAME')]
+            self.collection = self.db[settings.get('COLLECTION_NAME')]
         except ModuleNotFoundError:
             spider.pymongo_error = True
 
@@ -104,11 +102,11 @@ class MongoPipeline(object):
             import pymongo
 
             new_item = copy.deepcopy(item)
-            if not self.collection.find_one({'id': new_item['weibo']['id']}):
+
+            # 不保存重复ID
+            if not self.collection.find_one({'id': new_item['weibo']['id']}) and new_item['weibo']['location'] and settings.get('REGION')[0] in new_item['weibo']['location']:
                 self.collection.insert_one(dict(new_item['weibo']))
-            else:
-                self.collection.update_one({'id': new_item['weibo']['id']},
-                                           {'$set': dict(new_item['weibo'])})
+
         except pymongo.errors.ServerSelectionTimeoutError:
             spider.mongo_error = True
 
