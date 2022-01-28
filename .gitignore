@@ -1,0 +1,4 @@
+.idea
+*.pyc
+weibo/log/*.log
+weibo/crawls/search/*
